@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
   "httpx>=0.28.0",
+  "mcp>=1.9.0",
   "pydantic>=2.7.0",
   "rich>=13.7.0",
   "typer>=0.12.0",
@@ -20,6 +21,7 @@ dev = [
 
 [project.scripts]
 fieldops = "fieldops.cli:app"
+fieldops-metadata-mcp = "fieldops.mcp_servers.metadata_server:main"
 
 [build-system]
 requires = ["hatchling"]

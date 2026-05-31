@@ -1,0 +1,51 @@
+[
+  {
+    "stat_id": "cs-il-mclean-corn-acreage-2024",
+    "state": "ILLINOIS",
+    "county": "MCLEAN",
+    "commodity": "CORN",
+    "year": 2024,
+    "statistic": "AREA PLANTED",
+    "unit": "ACRES",
+    "value": 352000,
+    "source_name": "USDA NASS QuickStats fixture",
+    "source_url": "https://quickstats.nass.usda.gov/api"
+  },
+  {
+    "stat_id": "cs-il-mclean-soy-acreage-2024",
+    "state": "ILLINOIS",
+    "county": "MCLEAN",
+    "commodity": "SOYBEANS",
+    "year": 2024,
+    "statistic": "AREA PLANTED",
+    "unit": "ACRES",
+    "value": 315000,
+    "source_name": "USDA NASS QuickStats fixture",
+    "source_url": "https://quickstats.nass.usda.gov/api"
+  },
+  {
+    "stat_id": "cs-ia-story-corn-acreage-2024",
+    "state": "IOWA",
+    "county": "STORY",
+    "commodity": "CORN",
+    "year": 2024,
+    "statistic": "AREA PLANTED",
+    "unit": "ACRES",
+    "value": 178000,
+    "source_name": "USDA NASS QuickStats fixture",
+    "source_url": "https://quickstats.nass.usda.gov/api"
+  },
+  {
+    "stat_id": "cs-ia-story-soy-acreage-2024",
+    "state": "IOWA",
+    "county": "STORY",
+    "commodity": "SOYBEANS",
+    "year": 2024,
+    "statistic": "AREA PLANTED",
+    "unit": "ACRES",
+    "value": 162000,
+    "source_name": "USDA NASS QuickStats fixture",
+    "source_url": "https://quickstats.nass.usda.gov/api"
+  }
+]
+

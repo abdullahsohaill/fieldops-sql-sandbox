@@ -23,6 +23,7 @@ dev = [
 [project.scripts]
 fieldops = "fieldops.cli:app"
 fieldops-metadata-mcp = "fieldops.mcp_servers.metadata_server:main"
+fieldops-sql-mcp = "fieldops.mcp_servers.sql_sandbox_server:main"
 
 [build-system]
 requires = ["hatchling"]

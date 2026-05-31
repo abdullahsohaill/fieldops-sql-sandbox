@@ -18,18 +18,17 @@ from fieldops.security.sql_validator import (
 mcp = FastMCP("fieldops-sql-sandbox")
 
 
-def resolve_db_path(db_path: str | None = None) -> Path:
-    return Path(db_path) if db_path else get_settings().db_path
+def resolve_db_path() -> Path:
+    return get_settings().db_path
 
 
 @mcp.tool()
 async def validate_read_only_sql(
     query: str,
     max_rows: int = DEFAULT_MAX_ROWS,
-    db_path: str | None = None,
 ) -> dict[str, Any]:
     """Validate generated SQL without executing it."""
-    path = resolve_db_path(db_path)
+    path = resolve_db_path()
     try:
         validation = validate_sql(query, allowed_tables=list_tables(path), max_rows=max_rows)
     except SqlValidationError as exc:
@@ -53,10 +52,9 @@ async def validate_read_only_sql(
 async def execute_read_only_sql(
     query: str,
     max_rows: int = DEFAULT_MAX_ROWS,
-    db_path: str | None = None,
 ) -> dict[str, Any]:
     """Validate and execute read-only SQL against the FieldOps database."""
-    path = resolve_db_path(db_path)
+    path = resolve_db_path()
     try:
         result = execute_read_only_query(path, query, max_rows=max_rows)
     except SqlValidationError as exc:
@@ -85,4 +83,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

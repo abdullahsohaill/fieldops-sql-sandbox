@@ -10,10 +10,11 @@ from fieldops.mcp_servers.sql_sandbox_server import (
 
 
 @pytest.mark.asyncio
-async def test_validate_read_only_sql_tool_returns_safe_query(tmp_path):
+async def test_validate_read_only_sql_tool_returns_safe_query(tmp_path, monkeypatch):
     db_path = await build_database(tmp_path / "fieldops.db", mode="offline")
+    monkeypatch.setenv("FIELDOPS_DB_PATH", str(db_path))
 
-    response = await validate_read_only_sql("SELECT name FROM fields", db_path=str(db_path))
+    response = await validate_read_only_sql("SELECT name FROM fields")
 
     assert response["ok"] is True
     assert response["validation"]["referenced_tables"] == ["fields"]
@@ -21,23 +22,24 @@ async def test_validate_read_only_sql_tool_returns_safe_query(tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_validate_read_only_sql_tool_returns_structured_rejection(tmp_path):
+async def test_validate_read_only_sql_tool_returns_structured_rejection(tmp_path, monkeypatch):
     db_path = await build_database(tmp_path / "fieldops.db", mode="offline")
+    monkeypatch.setenv("FIELDOPS_DB_PATH", str(db_path))
 
-    response = await validate_read_only_sql("DROP TABLE fields", db_path=str(db_path))
+    response = await validate_read_only_sql("DROP TABLE fields")
 
     assert response["ok"] is False
     assert response["error"]["code"] == "blocked_keyword"
 
 
 @pytest.mark.asyncio
-async def test_execute_read_only_sql_tool_returns_rows(tmp_path):
+async def test_execute_read_only_sql_tool_returns_rows(tmp_path, monkeypatch):
     db_path = await build_database(tmp_path / "fieldops.db", mode="offline")
+    monkeypatch.setenv("FIELDOPS_DB_PATH", str(db_path))
 
     response = await execute_read_only_sql(
         "SELECT field_id, name FROM fields ORDER BY field_id",
         max_rows=2,
-        db_path=str(db_path),
     )
 
     assert response["ok"] is True
@@ -47,14 +49,13 @@ async def test_execute_read_only_sql_tool_returns_rows(tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_execute_read_only_sql_tool_blocks_writes_before_execution(tmp_path):
+async def test_execute_read_only_sql_tool_blocks_writes_before_execution(tmp_path, monkeypatch):
     db_path = await build_database(tmp_path / "fieldops.db", mode="offline")
+    monkeypatch.setenv("FIELDOPS_DB_PATH", str(db_path))
 
     response = await execute_read_only_sql(
         "UPDATE fields SET crop = 'CORN'",
-        db_path=str(db_path),
     )
 
     assert response["ok"] is False
     assert response["error"]["code"] == "blocked_keyword"
-

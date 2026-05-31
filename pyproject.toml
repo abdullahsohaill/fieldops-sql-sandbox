@@ -9,6 +9,7 @@ dependencies = [
   "mcp>=1.9.0",
   "pydantic>=2.7.0",
   "rich>=13.7.0",
+  "sqlglot>=26.0.0",
   "typer>=0.12.0",
 ]
 

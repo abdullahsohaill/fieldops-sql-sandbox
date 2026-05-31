@@ -5,6 +5,7 @@ from typing import Iterable
 
 import sqlglot
 from sqlglot import exp
+from sqlglot.tokens import TokenType
 
 
 DEFAULT_MAX_ROWS = 100
@@ -99,7 +100,11 @@ def _parse_single_statement(query: str) -> list[exp.Expression]:
 
 
 def _reject_obvious_blocked_keywords(query: str) -> None:
-    tokens = {token.text.lower() for token in sqlglot.tokens.Tokenizer(dialect="sqlite").tokenize(query)}
+    tokens = {
+        token.text.lower()
+        for token in sqlglot.tokens.Tokenizer(dialect="sqlite").tokenize(query)
+        if token.token_type is not TokenType.STRING
+    }
     blocked = tokens & BLOCKED_KEYWORDS
     if blocked:
         blocked_list = ", ".join(sorted(blocked))
@@ -137,4 +142,3 @@ def _limit_value(limit_expression: exp.Expression) -> int | None:
     if isinstance(value_expression, exp.Literal) and value_expression.is_number:
         return int(value_expression.this)
     return None
-

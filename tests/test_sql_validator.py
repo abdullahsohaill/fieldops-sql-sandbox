@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from fieldops.security.sql_validator import validate_read_only_sql
+import pytest
+
+from fieldops.security.sql_validator import SqlValidationError, validate_read_only_sql
 
 
 ALLOWED_TABLES = {
@@ -49,3 +51,37 @@ def test_validator_preserves_existing_safe_limit():
 
     assert result.limit_added is False
     assert "LIMIT 25" in result.safe_query
+
+
+def test_validator_clamps_existing_large_limit():
+    result = validate_read_only_sql("SELECT * FROM fields LIMIT 500", ALLOWED_TABLES)
+
+    assert result.limit_added is False
+    assert "LIMIT 100" in result.safe_query
+
+
+@pytest.mark.parametrize(
+    ("query", "code"),
+    [
+        ("", "empty_query"),
+        ("SELECT * FROM fields; SELECT * FROM missions", "multiple_statements"),
+        ("UPDATE fields SET crop = 'CORN'", "blocked_keyword"),
+        ("DELETE FROM missions", "blocked_keyword"),
+        ("DROP TABLE fields", "blocked_keyword"),
+        ("PRAGMA table_info(fields)", "blocked_keyword"),
+        ("ATTACH DATABASE 'other.db' AS other", "blocked_keyword"),
+        ("SELECT * FROM payroll", "unknown_table"),
+        ("EXPLAIN SELECT * FROM fields", "not_select"),
+    ],
+)
+def test_validator_rejects_unsafe_or_out_of_scope_sql(query, code):
+    with pytest.raises(SqlValidationError) as exc_info:
+        validate_read_only_sql(query, ALLOWED_TABLES)
+
+    assert exc_info.value.code == code
+
+
+def test_validator_does_not_block_keywords_inside_string_literals():
+    result = validate_read_only_sql("SELECT 'drop' AS example FROM fields", ALLOWED_TABLES)
+
+    assert result.referenced_tables == ("fields",)

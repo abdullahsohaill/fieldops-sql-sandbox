@@ -138,8 +138,8 @@ GitHub Actions runs on pull requests and pushes to `main`:
 
 The fastest path for a reviewer is:
 
-1. Read [docs/architecture.md](/Users/abdullahsohail/LUMS/Senior%20Courses/precisionai_task/fieldops-sql-sandbox/docs/architecture.md)
-2. Read [docs/threat-model.md](/Users/abdullahsohail/LUMS/Senior%20Courses/precisionai_task/fieldops-sql-sandbox/docs/threat-model.md)
+1. Read [docs/architecture.md](docs/architecture.md)
+2. Read [docs/threat-model.md](docs/threat-model.md)
 3. Run `uv run fieldops demo`
 4. Inspect the merged PR history for each issue-sized increment
 
@@ -151,4 +151,3 @@ The fastest path for a reviewer is:
 - SQL execution is restricted to read-only analytics; writes are explicitly out
   of scope for this MVP.
 - MCP servers are local stdio processes for the MVP, not remote services.
-

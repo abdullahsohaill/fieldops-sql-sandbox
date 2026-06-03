@@ -48,5 +48,7 @@ def test_ask_surfaces_provider_failures_cleanly(tmp_path, monkeypatch):
     result = runner.invoke(app, ["ask", "Which fields had high weed pressure?"])
 
     assert result.exit_code != 0
-    assert "Gemini request failed for model `test-model`" in result.output
-    assert "Retry shortly or set FIELDOPS_MODEL" in result.output
+    output = result.output.replace("\n", "")
+    assert "Gemini request failed" in output
+    assert "503 UNAVAILABLE" in output
+    assert "Retry shortly or set FIELDOPS_MODEL" in output

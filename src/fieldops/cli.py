@@ -120,9 +120,9 @@ def ask(
     try:
         result = asyncio.run(FieldOpsOrchestrator(provider, _router_for_db(path)).answer(question))
     except ModelProviderError as exc:
-        raise typer.BadParameter(
-            f"{exc}. Retry shortly or set FIELDOPS_MODEL to another available Gemini model."
-        ) from exc
+        console.print(f"Gemini request failed for model `{settings.model}`: {exc}")
+        console.print("Retry shortly or set FIELDOPS_MODEL to another available Gemini model.")
+        raise typer.Exit(code=1)
     console.print(result.answer)
 
 

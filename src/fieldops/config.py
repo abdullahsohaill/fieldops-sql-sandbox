@@ -21,7 +21,9 @@ class Settings:
     max_tool_loops: int = 4
 
 
-def load_env_file(env_file: Path = ENV_FILE) -> None:
+def load_env_file(env_file: Path | None = None) -> None:
+    if env_file is None:
+        env_file = ENV_FILE
     if not env_file.exists():
         return
 

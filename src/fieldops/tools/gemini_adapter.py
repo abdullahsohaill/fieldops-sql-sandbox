@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from google.genai import types
+
 from fieldops.tools.protocol import (
     InternalToolCall,
     InternalToolResult,
@@ -16,50 +18,43 @@ class GeminiToolAdapter:
     def __init__(self, catalog: ToolCatalog) -> None:
         self.catalog = catalog
 
-    def to_provider_tools(self) -> list[dict[str, Any]]:
+    def to_provider_tools(self) -> list[types.Tool]:
         return [
-            {
-                "function_declarations": [
-                    {
-                        "name": tool.name,
-                        "description": tool.description,
-                        "parameters": _gemini_schema(tool.input_schema),
-                    }
+            types.Tool(
+                functionDeclarations=[
+                    types.FunctionDeclaration(
+                        name=tool.name,
+                        description=tool.description,
+                        parametersJsonSchema=tool.input_schema,
+                    )
                     for tool in self.catalog.tools
                 ]
-            }
+            )
         ]
 
-    def normalize_call(self, function_call: dict[str, Any]) -> InternalToolCall:
-        name = function_call["name"]
+    def normalize_call(self, function_call: dict[str, Any] | types.FunctionCall) -> InternalToolCall:
+        if isinstance(function_call, dict):
+            name = function_call["name"]
+            call_id = function_call.get("id")
+            args = dict(function_call.get("args") or {})
+        else:
+            name = function_call.name or ""
+            call_id = function_call.id
+            args = dict(function_call.args or {})
         spec = self.catalog.resolve(name)
         return InternalToolCall(
-            call_id=function_call.get("id") or f"gemini-{name}",
+            call_id=call_id or f"gemini-{name}",
             provider=self.provider,
             name=name,
-            arguments=dict(function_call.get("args") or {}),
+            arguments=args,
             server_name=spec.server_name,
         )
 
-    def result_to_provider_response(self, result: InternalToolResult) -> dict[str, Any]:
-        return {
-            "function_response": {
-                "name": result.call_id,
-                "response": result.payload(),
-            }
-        }
-
-
-def _gemini_schema(schema: dict[str, Any]) -> dict[str, Any]:
-    converted = dict(schema)
-    if "additionalProperties" in converted:
-        converted.pop("additionalProperties")
-    if converted.get("type") == "object":
-        converted["type"] = "OBJECT"
-    for property_schema in converted.get("properties", {}).values():
-        if isinstance(property_schema, dict) and "type" in property_schema:
-            property_schema["type"] = str(property_schema["type"]).upper()
-    return converted
+    def result_to_provider_response(self, result: InternalToolResult, tool_name: str) -> types.Part:
+        return types.Part.from_function_response(
+            name=tool_name,
+            response=result.payload(),
+        )
 
 
 def gemini_tool_spec(
@@ -74,4 +69,3 @@ def gemini_tool_spec(
         input_schema=input_schema,
         server_name=server_name,
     )
-

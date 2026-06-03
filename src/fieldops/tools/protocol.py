@@ -81,3 +81,6 @@ class ToolCatalog:
         except KeyError as exc:
             raise KeyError(f"Unknown tool: {name}") from exc
 
+    def subset(self, *tool_names: str) -> ToolCatalog:
+        selected = tuple(self.resolve(name) for name in tool_names)
+        return ToolCatalog(selected)

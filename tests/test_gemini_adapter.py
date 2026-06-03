@@ -30,11 +30,11 @@ def test_gemini_adapter_converts_internal_specs_to_function_declarations():
 
     tools = adapter.to_provider_tools()
 
-    declaration = tools[0]["function_declarations"][0]
-    assert declaration["name"] == "execute_read_only_sql"
-    assert declaration["parameters"]["type"] == "OBJECT"
-    assert declaration["parameters"]["properties"]["query"]["type"] == "STRING"
-    assert "additionalProperties" not in declaration["parameters"]
+    # tools is a list of types.Tool objects
+    declaration = tools[0].function_declarations[0]
+    assert declaration.name == "execute_read_only_sql"
+    assert declaration.parameters_json_schema["type"] == "object"
+    assert declaration.parameters_json_schema["properties"]["query"]["type"] == "string"
 
 
 def test_gemini_adapter_normalizes_function_calls():
@@ -58,8 +58,10 @@ def test_gemini_adapter_maps_internal_results_to_function_response():
     adapter = GeminiToolAdapter(_catalog())
     result = InternalToolResult.success("call-123", {"row_count": 2})
 
-    response = adapter.result_to_provider_response(result)
+    response = adapter.result_to_provider_response(result, "execute_read_only_sql")
 
-    assert response["function_response"]["name"] == "call-123"
-    assert response["function_response"]["response"]["result"] == {"row_count": 2}
+    assert response.function_response.name == "execute_read_only_sql"
+    assert response.function_response.response == result.payload()
+
+
 

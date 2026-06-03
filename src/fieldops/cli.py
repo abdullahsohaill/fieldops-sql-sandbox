@@ -11,7 +11,12 @@ from rich.console import Console
 from rich.table import Table
 
 from fieldops.agents.orchestrator import FieldOpsOrchestrator
-from fieldops.agents.provider import FakeProvider, GeminiProvider, ModelResponse
+from fieldops.agents.provider import (
+    FakeProvider,
+    GeminiProvider,
+    ModelProviderError,
+    ModelResponse,
+)
 from fieldops.config import get_settings
 from fieldops.data.builder import build_database
 from fieldops.mcp_client.config import McpServerConfig, McpServerRegistry
@@ -112,7 +117,12 @@ def ask(
         asyncio.run(build_database(path, mode="offline"))
 
     provider = GeminiProvider(api_key=settings.gemini_api_key, model=settings.model)
-    result = asyncio.run(FieldOpsOrchestrator(provider, _router_for_db(path)).answer(question))
+    try:
+        result = asyncio.run(FieldOpsOrchestrator(provider, _router_for_db(path)).answer(question))
+    except ModelProviderError as exc:
+        raise typer.BadParameter(
+            f"{exc}. Retry shortly or set FIELDOPS_MODEL to another available Gemini model."
+        ) from exc
     console.print(result.answer)
 
 

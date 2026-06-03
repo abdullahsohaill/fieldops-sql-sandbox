@@ -44,6 +44,7 @@ class FieldOpsOrchestrator:
         self.provider = provider
         self.router = router
         self.catalog = catalog or orchestration_tool_catalog()
+        self.sql_catalog = self.catalog.subset("execute_read_only_sql")
         self.max_tool_loops = max_tool_loops
 
     async def answer(self, question: str) -> OrchestratorResult:
@@ -76,6 +77,13 @@ class FieldOpsOrchestrator:
         return response.text.strip()
 
     async def _schema_agent(self, request_id: str) -> dict[str, Any]:
+        tables_call = InternalToolCall(
+            call_id=f"{request_id}:schema-tables",
+            provider="gemini",
+            name="list_tables",
+            arguments={},
+            server_name="metadata",
+        )
         summary_call = InternalToolCall(
             call_id=f"{request_id}:schema-summary",
             provider="gemini",
@@ -83,9 +91,26 @@ class FieldOpsOrchestrator:
             arguments={},
             server_name="metadata",
         )
+        tables = await self.router.dispatch(tables_call)
         summary = await self.router.dispatch(summary_call)
+        schema_details: dict[str, Any] = {}
+        if tables.ok and isinstance(tables.result, dict):
+            table_names = tables.result.get("tables", [])
+            if isinstance(table_names, list):
+                for table_name in table_names:
+                    describe_call = InternalToolCall(
+                        call_id=f"{request_id}:describe:{table_name}",
+                        provider="gemini",
+                        name="describe_table",
+                        arguments={"table_name": table_name},
+                        server_name="metadata",
+                    )
+                    described = await self.router.dispatch(describe_call)
+                    schema_details[table_name] = described.result if described.ok else described.error
         return {
+            "tables": tables.result if tables.ok else tables.error,
             "summary": summary.result if summary.ok else summary.error,
+            "details": schema_details,
         }
 
     async def _sql_agent(
@@ -104,7 +129,7 @@ class FieldOpsOrchestrator:
                     f"Schema context: {json.dumps(schema_context, sort_keys=True)}",
                 ]
             ),
-            tools=self.catalog,
+            tools=self.sql_catalog,
         )
         if response.tool_call is None:
             raise RuntimeError("SQL agent did not return a tool call.")
@@ -133,4 +158,3 @@ class FieldOpsOrchestrator:
             tool_result=tool_result,
         )
         return response.text.strip()
-

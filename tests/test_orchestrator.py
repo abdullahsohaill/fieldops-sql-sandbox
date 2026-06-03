@@ -70,6 +70,11 @@ async def test_orchestrator_runs_full_fake_provider_flow(tmp_path):
     assert result.tool_result.ok is True
     assert result.tool_result.result is not None
     assert result.tool_result.result["result"]["row_count"] >= 2
+    assert "fields" in result.schema_context["details"]
+    assert any(
+        column["name"] == "severity_score"
+        for column in result.schema_context["details"]["weed_detections"]["columns"]
+    )
     assert "North Ridge" in result.answer
 
 
@@ -101,3 +106,31 @@ async def test_orchestrator_surfaces_sql_sandbox_rejections(tmp_path):
     }
     assert "rejected" in result.answer
 
+
+@pytest.mark.asyncio
+async def test_sql_agent_only_receives_sql_tool(tmp_path):
+    db_path = await build_database(tmp_path / "fieldops.db", mode="offline")
+
+    class InspectingProvider(FakeProvider):
+        async def generate(self, prompt, *, tools=None, tool_result=None):
+            if "You are the SQL agent." in prompt:
+                assert tools is not None
+                assert [tool.name for tool in tools.tools] == ["execute_read_only_sql"]
+                return ModelResponse(
+                    tool_call=InternalToolCall(
+                        call_id="sql-call",
+                        provider="gemini",
+                        name="execute_read_only_sql",
+                        arguments={"query": "SELECT name FROM fields", "max_rows": 5},
+                        server_name="sql_sandbox",
+                    )
+                )
+            if "You are the FieldOps planner agent." in prompt:
+                return ModelResponse(text="Use SQL to compare weed pressure.")
+            return ModelResponse(text="Done.")
+
+    result = await FieldOpsOrchestrator(InspectingProvider(), _router(str(db_path))).answer(
+        "Which fields had the highest weed pressure?"
+    )
+
+    assert result.tool_call.name == "execute_read_only_sql"
